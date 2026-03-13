@@ -1,23 +1,31 @@
 package pl.mrugacz95.kiosk
 
-import android.app.PendingIntent
-import android.app.PendingIntent.FLAG_IMMUTABLE
+
 import android.app.admin.DevicePolicyManager
 import android.app.admin.SystemUpdatePolicy
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.IntentSender
-import android.content.pm.PackageInstaller
-import android.content.pm.PackageInstaller.SessionParams
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.UserManager
 import android.provider.Settings
+import android.text.Editable
+import android.util.Log
 import android.view.View
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import pl.mrugacz95.kiosk.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -26,14 +34,38 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mDevicePolicyManager: DevicePolicyManager
     private lateinit var binding: ActivityMainBinding
 
+    var firststart = true
+
+
+
+    val Context.dataStore by preferencesDataStore(name = "settings")
+
+    val URLKEY = stringPreferencesKey("urlkey")
+
+
     companion object {
         const val LOCK_ACTIVITY_KEY = "pl.mrugacz95.kiosk.MainActivity"
     }
+
+    suspend fun saveURL(context: Context, url: String){
+        context.dataStore.edit { preferences ->
+            preferences[URLKEY] = url
+        }
+    }
+
+
+    suspend fun readUrl(context: Context): String? {
+        val preferences = context.dataStore.data.first()
+        return preferences[URLKEY]
+    }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
 
         mAdminComponentName = MyDeviceAdminReceiver.getComponentName(this)
         mDevicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
@@ -46,6 +78,20 @@ class MainActivity : AppCompatActivity() {
         } else {
             Snackbar.make(binding.content, R.string.not_device_owner, Snackbar.LENGTH_SHORT).show()
         }
+
+
+        lifecycleScope.launch {
+
+
+            val urltoreplace = readUrl(this@MainActivity)
+            val edittext = findViewById<EditText>(R.id.editTextText2)
+            edittext.setText(urltoreplace)
+            autolaunchonstart()
+
+
+
+
+        }
         binding.btStartLockTask.setOnClickListener {
             setKioskPolicies(true, isAdmin)
         }
@@ -57,12 +103,96 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra(LOCK_ACTIVITY_KEY, false)
             startActivity(intent)
         }
-        binding.btInstallApp.setOnClickListener {
-            installApp()
+
+        binding.btstartwbvuiew.setOnClickListener {
+            launchwebviewwithstring()
         }
+
+
+
+
     }
 
     private fun isAdmin() = mDevicePolicyManager.isDeviceOwnerApp(packageName)
+
+    private fun launchwebviewwithstring() {
+        val edittext = findViewById<EditText>(R.id.editTextText2)
+        val urlstring = edittext.text.toString()
+
+        lifecycleScope.launch {
+            saveURL(this@MainActivity, urlstring)
+        }
+
+        launchWebView(urlstring)
+    }
+
+    private fun autolaunchonstart() {
+        if (firststart) {
+            val isAdmin = isAdmin()
+            //setKioskPolicies(true, isAdmin)
+            //launchwebviewwithstring()
+            firststart = false
+            Log.v("Autosart fun", "Autolaunching")
+        }
+        else {
+            Log.v("Autosart fun", "not first start skipping auto launch")
+        }
+
+
+
+    }
+
+    private fun launchWebView(url: String) {
+        setContentView(R.layout.webview_activity)
+
+        val button = findViewById<Button>(R.id.webviewclosebtn)
+
+        var leaveClicks = 0
+        button.setOnClickListener {
+            // do something
+            leaveClicks++
+            Log.v("Leavebutton", "leave button clicked")
+            if (leaveClicks > 25) {
+                setContentView(R.layout.activity_main)
+                val isAdmin = isAdmin()
+                val btStartLockTask = findViewById<Button>(R.id.btStartLockTask)
+                btStartLockTask.setOnClickListener {
+                    setKioskPolicies(true, isAdmin)
+                }
+                val btStopLockTask = findViewById<Button>(R.id.btStopLockTask)
+                btStopLockTask.setOnClickListener {
+                    setKioskPolicies(false, isAdmin)
+                    val intent = Intent(applicationContext, MainActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
+                    intent.putExtra(LOCK_ACTIVITY_KEY, false)
+                    startActivity(intent)
+                }
+
+                val btstartwbvuiew = findViewById<Button>(R.id.btstartwbvuiew)
+                btstartwbvuiew.setOnClickListener {
+                    val edittext = findViewById<EditText>(R.id.editTextText2)
+                    val urlstring = edittext.text.toString()
+                    launchWebView(urlstring)
+                }
+
+            }
+
+        }
+
+        val myWebView: WebView = findViewById(R.id.mainwebviewwin)
+        myWebView.webViewClient = WebViewClient()
+
+        myWebView.settings.javaScriptEnabled = true
+        myWebView.settings.domStorageEnabled = true
+        myWebView.settings.useWideViewPort = true
+        myWebView.settings.loadWithOverviewMode = true
+
+
+        myWebView.loadUrl(url)
+        myWebView.settings.blockNetworkLoads = false
+
+    }
 
     private fun setKioskPolicies(enable: Boolean, isAdmin: Boolean) {
         if (isAdmin) {
@@ -167,42 +297,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createIntentSender(context: Context?, sessionId: Int, packageName: String?): IntentSender {
-        val intent = Intent("INSTALL_COMPLETE")
-        if (packageName != null) {
-            intent.putExtra("PACKAGE_NAME", packageName)
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            sessionId,
-            intent,
-            FLAG_IMMUTABLE
-        )
-        return pendingIntent.intentSender
-    }
+
 
     private fun installApp() {
         if (!isAdmin()) {
             Snackbar.make(binding.content, R.string.not_device_owner, Snackbar.LENGTH_LONG).show()
             return
         }
-        val raw = resources.openRawResource(R.raw.other_app)
-        val packageInstaller: PackageInstaller = packageManager.packageInstaller
-        val params = SessionParams(SessionParams.MODE_FULL_INSTALL)
-        params.setAppPackageName("com.mrugas.smallapp")
-        val sessionId = packageInstaller.createSession(params)
-        val session = packageInstaller.openSession(sessionId)
-        val out = session.openWrite("SmallApp", 0, -1)
-        val buffer = ByteArray(65536)
-        var c: Int
-        while (raw.read(buffer).also { c = it } != -1) {
-            out.write(buffer, 0, c)
-        }
-        session.fsync(out)
-        out.close()
-        createIntentSender(this, sessionId, packageName).let { intentSender ->
-            session.commit(intentSender)
-        }
-        session.close()
+
     }
 }

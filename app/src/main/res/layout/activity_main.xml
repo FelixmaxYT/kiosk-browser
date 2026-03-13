@@ -9,48 +9,72 @@
     tools:context="pl.mrugacz95.kiosk.MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_anchor="@+id/constraintLayout"
+        app:layout_anchorGravity="center">
 
         <TextView
+            android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/text_margin"
             android:text="@string/app_name"
             android:textSize="@dimen/title"
             app:layout_constraintBottom_toTopOf="@id/btStartLockTask"
-            app:layout_constraintStart_toStartOf="@id/btStartLockTask"
-            app:layout_constraintEnd_toEndOf="@id/btStopLockTask" />
+            app:layout_constraintEnd_toEndOf="@id/btStopLockTask"
+            app:layout_constraintStart_toStartOf="@id/btStartLockTask" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btStartLockTask"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/start_lock_task"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/btStopLockTask" />
+            app:layout_constraintRight_toLeftOf="@id/btStopLockTask"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <com.google.android.material.button.MaterialButton
-            style="?attr/materialButtonOutlinedStyle"
             android:id="@+id/btStopLockTask"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/stop_lock_task"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toRightOf="@id/btStartLockTask"
-            app:layout_constraintRight_toRightOf="parent" />
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btInstallApp"
+        <Button
+            android:id="@+id/btstartwbvuiew"
+            android:layout_width="343dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="24dp"
+            android:text="@string/web_view_start"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <EditText
+            android:id="@+id/editTextText2"
+            style="@style/Widget.Material3.TextInputEditText.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/buttons_margin"
-            android:text="@string/install"
-            app:layout_constraintTop_toBottomOf="@id/btStartLockTask"
-            app:layout_constraintStart_toStartOf="@id/btStartLockTask"
-            app:layout_constraintEnd_toEndOf="@id/btStopLockTask" />
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="#EDEDED"
+            android:ems="10"
+            android:inputType="text"
+            android:text="@string/url"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btStartLockTask" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
