@@ -154,6 +154,19 @@ class MainActivity : AppCompatActivity() {
             Log.v("Leavebutton", "leave button clicked")
             if (leaveClicks > 25) {
                 setContentView(R.layout.activity_main)
+
+                lifecycleScope.launch {
+
+
+                    val urltoreplace = readUrl(this@MainActivity)
+                    val edittext = findViewById<EditText>(R.id.editTextText2)
+                    edittext.setText(urltoreplace)
+                    autolaunchonstart()
+
+
+
+
+                }
                 val isAdmin = isAdmin()
                 val btStartLockTask = findViewById<Button>(R.id.btStartLockTask)
                 btStartLockTask.setOnClickListener {
